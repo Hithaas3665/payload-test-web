@@ -54,6 +54,7 @@ export type SupportedTimezones =
   | 'Asia/Singapore'
   | 'Asia/Tokyo'
   | 'Asia/Seoul'
+  | 'Australia/Brisbane'
   | 'Australia/Sydney'
   | 'Pacific/Guam'
   | 'Pacific/Noumea'
@@ -71,6 +72,7 @@ export interface Config {
     media: Media;
     categories: Category;
     users: User;
+    blogs: Blog;
     redirects: Redirect;
     forms: Form;
     'form-submissions': FormSubmission;
@@ -87,6 +89,7 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
+    blogs: BlogsSelect<false> | BlogsSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     forms: FormsSelect<false> | FormsSelect<true>;
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
@@ -177,6 +180,10 @@ export interface Page {
               | ({
                   relationTo: 'posts';
                   value: string | Post;
+                } | null)
+              | ({
+                  relationTo: 'blogs';
+                  value: string | Blog;
                 } | null);
             url?: string | null;
             label: string;
@@ -386,6 +393,52 @@ export interface User {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "blogs".
+ */
+export interface Blog {
+  id: string;
+  title: string;
+  heroImage?: (string | null) | Media;
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: string;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  relatedBlogs?: (string | Blog)[] | null;
+  meta?: {
+    title?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (string | null) | Media;
+    description?: string | null;
+  };
+  publishedAt?: string | null;
+  authors?: (string | User)[] | null;
+  populatedAuthors?:
+    | {
+        id?: string | null;
+        name?: string | null;
+      }[]
+    | null;
+  slug?: string | null;
+  slugLock?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "CallToActionBlock".
  */
 export interface CallToActionBlock {
@@ -417,6 +470,10 @@ export interface CallToActionBlock {
             | ({
                 relationTo: 'posts';
                 value: string | Post;
+              } | null)
+            | ({
+                relationTo: 'blogs';
+                value: string | Blog;
               } | null);
           url?: string | null;
           label: string;
@@ -467,6 +524,10 @@ export interface ContentBlock {
             | ({
                 relationTo: 'posts';
                 value: string | Post;
+              } | null)
+            | ({
+                relationTo: 'blogs';
+                value: string | Blog;
               } | null);
           url?: string | null;
           label: string;
@@ -513,7 +574,7 @@ export interface ArchiveBlock {
     [k: string]: unknown;
   } | null;
   populateBy?: ('collection' | 'selection') | null;
-  relationTo?: 'posts' | null;
+  relationTo?: ('posts' | 'blogs') | null;
   categories?: (string | Category)[] | null;
   limit?: number | null;
   selectedDocs?:
@@ -624,6 +685,7 @@ export interface Form {
             label?: string | null;
             width?: number | null;
             defaultValue?: string | null;
+            placeholder?: string | null;
             options?:
               | {
                   label: string;
@@ -745,6 +807,10 @@ export interface Redirect {
       | ({
           relationTo: 'posts';
           value: string | Post;
+        } | null)
+      | ({
+          relationTo: 'blogs';
+          value: string | Blog;
         } | null);
     url?: string | null;
   };
@@ -778,10 +844,15 @@ export interface Search {
   id: string;
   title?: string | null;
   priority?: number | null;
-  doc: {
-    relationTo: 'posts';
-    value: string | Post;
-  };
+  doc:
+    | {
+        relationTo: 'posts';
+        value: string | Post;
+      }
+    | {
+        relationTo: 'blogs';
+        value: string | Blog;
+      };
   slug?: string | null;
   meta?: {
     title?: string | null;
@@ -916,6 +987,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'users';
         value: string | User;
+      } | null)
+    | ({
+        relationTo: 'blogs';
+        value: string | Blog;
       } | null)
     | ({
         relationTo: 'redirects';
@@ -1276,6 +1351,36 @@ export interface UsersSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "blogs_select".
+ */
+export interface BlogsSelect<T extends boolean = true> {
+  title?: T;
+  heroImage?: T;
+  content?: T;
+  relatedBlogs?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        image?: T;
+        description?: T;
+      };
+  publishedAt?: T;
+  authors?: T;
+  populatedAuthors?:
+    | T
+    | {
+        id?: T;
+        name?: T;
+      };
+  slug?: T;
+  slugLock?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "redirects_select".
  */
 export interface RedirectsSelect<T extends boolean = true> {
@@ -1355,6 +1460,7 @@ export interface FormsSelect<T extends boolean = true> {
               label?: T;
               width?: T;
               defaultValue?: T;
+              placeholder?: T;
               options?:
                 | T
                 | {
@@ -1546,6 +1652,10 @@ export interface Header {
             | ({
                 relationTo: 'posts';
                 value: string | Post;
+              } | null)
+            | ({
+                relationTo: 'blogs';
+                value: string | Blog;
               } | null);
           url?: string | null;
           label: string;
@@ -1575,6 +1685,10 @@ export interface Footer {
             | ({
                 relationTo: 'posts';
                 value: string | Post;
+              } | null)
+            | ({
+                relationTo: 'blogs';
+                value: string | Blog;
               } | null);
           url?: string | null;
           label: string;
@@ -1647,6 +1761,10 @@ export interface TaskSchedulePublish {
       | ({
           relationTo: 'posts';
           value: string | Post;
+        } | null)
+      | ({
+          relationTo: 'blogs';
+          value: string | Blog;
         } | null);
     global?: string | null;
     user?: (string | null) | User;
