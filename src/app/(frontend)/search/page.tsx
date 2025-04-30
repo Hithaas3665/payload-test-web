@@ -1,63 +1,75 @@
 import type { Metadata } from 'next/types'
+import configPromise from '@payload-config'
+import { getPayload, Where } from 'payload'
+import React from 'react'
 
 import { CollectionArchive } from '@/components/CollectionArchive'
-import configPromise from '@payload-config'
-import { getPayload } from 'payload'
-import React from 'react'
-import { Search } from '@/search/Component'
 import PageClient from './page.client'
+import { Search } from '@/search/Component'
 import { CardPostData } from '@/components/Card'
+import { CardBlogData } from '@/components/BlogCard'
 
 type Args = {
   searchParams: Promise<{
     q: string
   }>
 }
+
 export default async function Page({ searchParams: searchParamsPromise }: Args) {
   const { q: query } = await searchParamsPromise
   const payload = await getPayload({ config: configPromise })
 
-  const posts = await payload.find({
-    collection: 'search',
-    depth: 1,
-    limit: 12,
-    select: {
-      title: true,
-      slug: true,
-      categories: true,
-      meta: true,
-    },
-    // pagination: false reduces overhead if you don't need totalDocs
-    pagination: false,
-    ...(query
-      ? {
-          where: {
-            or: [
-              {
-                title: {
-                  like: query,
-                },
-              },
-              {
-                'meta.description': {
-                  like: query,
-                },
-              },
-              {
-                'meta.title': {
-                  like: query,
-                },
-              },
-              {
-                slug: {
-                  like: query,
-                },
-              },
-            ],
-          },
-        }
-      : {}),
-  })
+  const limit = 12
+
+  const buildQueryFilter = (query: string) => {
+    if (!query) return {}
+
+    return {
+      where: {
+        or: [
+          { title: { like: query } },
+          { slug: { like: query } },
+          { 'meta.description': { like: query } },
+          { 'meta.title': { like: query } },
+        ] as Where[], // Cast to mutable type to match the expected structure
+      },
+    }
+  }
+
+  const queryFilter = buildQueryFilter(query)
+
+  const [postsRes, blogsRes] = await Promise.all([
+    payload.find({
+      collection: 'posts',
+      depth: 1,
+      limit,
+      select: {
+        title: true,
+        slug: true,
+        categories: true,
+        meta: true,
+      },
+      pagination: false,
+      ...queryFilter,
+    }),
+    payload.find({
+      collection: 'blogs',
+      depth: 1,
+      limit,
+      select: {
+        title: true,
+        slug: true,
+        meta: true,
+      },
+      pagination: false,
+      ...queryFilter,
+    }),
+  ])
+
+  const posts = postsRes.docs as CardPostData[]
+  const blogs = blogsRes.docs as CardBlogData[]
+
+  const hasResults = posts.length > 0 || blogs.length > 0
 
   return (
     <div className="pt-24 pb-24">
@@ -72,8 +84,8 @@ export default async function Page({ searchParams: searchParamsPromise }: Args) 
         </div>
       </div>
 
-      {posts.totalDocs > 0 ? (
-        <CollectionArchive posts={posts.docs as CardPostData[]} />
+      {hasResults ? (
+        <CollectionArchive posts={posts} blogs={blogs} />
       ) : (
         <div className="container">No results found.</div>
       )}

@@ -578,10 +578,16 @@ export interface ArchiveBlock {
   categories?: (string | Category)[] | null;
   limit?: number | null;
   selectedDocs?:
-    | {
-        relationTo: 'posts';
-        value: string | Post;
-      }[]
+    | (
+        | {
+            relationTo: 'posts';
+            value: string | Post;
+          }
+        | {
+            relationTo: 'blogs';
+            value: string | Blog;
+          }
+      )[]
     | null;
   id?: string | null;
   blockName?: string | null;

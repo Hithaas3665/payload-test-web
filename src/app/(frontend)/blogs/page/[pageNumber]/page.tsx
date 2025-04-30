@@ -51,7 +51,7 @@ export default async function Page({ params: paramsPromise }: Args) {
         />
       </div>
 
-      {/* <CollectionArchive blogs={blogs.docs} /> */}
+      <CollectionArchive blogs={blogs.docs} posts={[]} />
 
       <div className="container">
         {blogs?.page && blogs?.totalPages > 1 && (
